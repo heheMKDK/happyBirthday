@@ -113,11 +113,213 @@
     <div id="popup-message"></div>
   </div>
 
-  <!-- JavaScript remains unchanged below -->
-
   <script>
-    // ... Your existing JS exactly as before ...
-    // (the entire JavaScript you have already)
+    let name = '';
+    let cakesEaten = 0;
+    const totalCakes = 20;
+    let kittyWorldX = 17500;
+    let popupShown = false;
+    let walking = false;
+
+    let world, cloudsContainer, cakesContainer;
+    let cakes = [];
+    let cakeSpawnInterval = null;
+    let cakeMoveInterval = null;
+    let spawnedCakesCount = 0;
+    let movementInterval = null;
+    let movementDirection = null;
+    let animationInterval = null;
+    let animationFrame = 0;
+
+    const eatSound = new Audio('eat.mp3');
+    const walkSound = new Audio('walk.mp3');
+    walkSound.loop = true;
+    const popupSound = new Audio('popup.mp3');
+
+    function startGame() {
+      name = document.getElementById('nameInput').value || 'Friend';
+      document.getElementById('start-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = 'block';
+
+      kittyWorldX = 17500;
+      popupShown = false;
+      cakesEaten = 0;
+      walking = false;
+      spawnedCakesCount = 0;
+      movementDirection = null;
+      clearInterval(movementInterval);
+      clearInterval(animationInterval);
+
+      world = document.getElementById('world');
+      cloudsContainer = document.getElementById('clouds');
+      cakesContainer = document.getElementById('cakes');
+
+      cloudsContainer.innerHTML = '';
+      cakesContainer.innerHTML = '';
+      cakes = [];
+
+      document.getElementById('kitty').style.backgroundImage = `url('hello_kitty1.png')`;
+
+      setupClouds();
+      placeCakes();
+      moveCakes();
+      updateWorldPosition();
+      setupKeyboard();
+    }
+
+    function setupClouds() {
+      let x = 0;
+      while (x < 35000) {
+        const cloud = document.createElement('div');
+        cloud.classList.add('cloud');
+
+        const w = 150 + Math.random() * 150;
+        const h = 60 + Math.random() * 60;
+        cloud.style.width = w + 'px';
+        cloud.style.height = h + 'px';
+
+        cloud.style.top = (50 + Math.random() * 150) + 'px';
+        cloud.style.left = x + 'px';
+        cloudsContainer.appendChild(cloud);
+
+        x += 200 + Math.random() * 400;
+      }
+    }
+
+    function placeCakes() {
+      cakeSpawnInterval = setInterval(() => {
+        if (spawnedCakesCount >= totalCakes) {
+          clearInterval(cakeSpawnInterval);
+          return;
+        }
+        const cake = document.createElement('div');
+        cake.classList.add('cake');
+        let spawnX = kittyWorldX + 400 + Math.random() * 300;
+        cake.style.left = spawnX + 'px';
+        cakesContainer.appendChild(cake);
+        cakes.push(cake);
+        spawnedCakesCount++;
+      }, 1250);
+    }
+
+    function moveCakes() {
+      cakeMoveInterval = setInterval(() => {
+        checkCollisions();
+      }, 30);
+    }
+
+    function updateWorldPosition() {
+      world.style.left = (-(kittyWorldX - window.innerWidth / 2)) + 'px';
+    }
+
+    function setupKeyboard() {
+      document.addEventListener('keydown', (e) => {
+        if (movementDirection) return;
+
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          movementDirection = e.key;
+
+          if (!walking) {
+            walking = true;
+            walkSound.currentTime = 0;
+            walkSound.play();
+          }
+
+          animationFrame = 0;
+          animationInterval = setInterval(() => {
+            animationFrame = (animationFrame + 1) % 2;
+            document.getElementById('kitty').style.backgroundImage = `url('hello_kitty${animationFrame + 1}.png')`;
+          }, 300);
+
+          movementInterval = setInterval(() => {
+            const step = 10;
+            if (movementDirection === 'ArrowLeft') {
+              kittyWorldX = Math.max(0, kittyWorldX - step);
+            } else if (movementDirection === 'ArrowRight') {
+              kittyWorldX = Math.min(35000, kittyWorldX + step);
+            }
+            updateWorldPosition();
+          }, 30);
+        }
+      });
+
+      document.addEventListener('keyup', (e) => {
+        if (e.key === movementDirection) {
+          clearInterval(movementInterval);
+          movementInterval = null;
+          movementDirection = null;
+
+          clearInterval(animationInterval);
+          animationInterval = null;
+          document.getElementById('kitty').style.backgroundImage = `url('hello_kitty1.png')`;
+
+          walking = false;
+          walkSound.pause();
+          walkSound.currentTime = 0;
+        }
+      });
+    }
+
+    function checkCollisions() {
+      const kittyRect = document.getElementById('kitty').getBoundingClientRect();
+      cakes.forEach((cake, index) => {
+        if (!cake) return;
+        const cakeRect = cake.getBoundingClientRect();
+        if (
+          kittyRect.left < cakeRect.right &&
+          kittyRect.right > cakeRect.left &&
+          kittyRect.bottom > cakeRect.top &&
+          kittyRect.top < cakeRect.bottom
+        ) {
+          eatCake(cake);
+          cakes[index] = null;
+        }
+      });
+    }
+
+    function eatCake(cake) {
+      cake.remove();
+      eatSound.currentTime = 0;
+      eatSound.play();
+      cakesEaten++;
+      if (cakesEaten >= totalCakes && !popupShown) {
+        popupShown = true;
+        clearInterval(cakeSpawnInterval);
+        clearInterval(cakeMoveInterval);
+        setTimeout(showPopup, 500);
+      }
+    }
+
+    function showPopup() {
+      popupSound.currentTime = 0;
+      popupSound.play().catch(e => console.log("Popup sound blocked"));
+      document.getElementById('popup-message').innerText = `🎉 HAPPY BIRTHDAY ${name.toUpperCase()}! 🎂`;
+      document.getElementById('popup').classList.remove('hidden');
+      showConfetti();
+    }
+
+    function showConfetti() {
+      for (let i = 0; i < 100; i++) {
+        const confetti = document.createElement('div');
+        confetti.textContent = '🎊';
+        confetti.style.position = 'fixed';
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.top = '-10px';
+        confetti.style.fontSize = '30px';
+        confetti.style.animation = `fall ${2 + Math.random() * 3}s linear forwards`;
+        document.body.appendChild(confetti);
+      }
+      const style = document.createElement('style');
+      style.innerHTML = `
+        @keyframes fall {
+          to {
+            transform: translateY(120vh);
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
   </script>
 </body>
 </html>
