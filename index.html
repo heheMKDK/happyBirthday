@@ -85,6 +85,7 @@
       font-size: 32px;
       z-index: 999;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      text-transform: uppercase;
     }
     .hidden {
       display: none;
@@ -198,7 +199,7 @@
         cakesContainer.appendChild(cake);
         cakes.push(cake);
         spawnedCakesCount++;
-      }, 1500);
+      }, 1250);
     }
 
     function moveCakes() {
@@ -292,7 +293,7 @@
     function showPopup() {
       popupSound.currentTime = 0;
       popupSound.play().catch(e => console.log("Popup sound blocked"));
-      document.getElementById('popup-message').innerText = `🎉 Happy Birthday ${name}! 🎂`;
+      document.getElementById('popup-message').innerText = `🎉 HAPPY BIRTHDAY ${name.toUpperCase()}! 🎂`;
       document.getElementById('popup').classList.remove('hidden');
       showConfetti();
     }
