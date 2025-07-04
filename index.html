@@ -34,7 +34,7 @@
     #world {
       position: absolute;
       height: 100%;
-      width: 12000px;
+      width: 20000px;
       left: 0;
       top: 0;
     }
@@ -48,7 +48,7 @@
     #ground {
       position: absolute;
       bottom: 0;
-      width: 12000px;
+      width: 20000px;
       height: 60px;
       background: #ffb6c1;
       z-index: 0;
@@ -115,8 +115,8 @@
   <script>
     let name = '';
     let cakesEaten = 0;
-    const totalCakes = 15;
-    let kittyWorldX = 6000;
+    const totalCakes = 20;
+    let kittyWorldX = 10000;
     let popupShown = false;
     let walking = false;
 
@@ -140,7 +140,7 @@
       document.getElementById('start-screen').style.display = 'none';
       document.getElementById('game-screen').style.display = 'block';
 
-      kittyWorldX = 6000;
+      kittyWorldX = 10000;
       popupShown = false;
       cakesEaten = 0;
       walking = false;
@@ -168,25 +168,20 @@
 
     function setupClouds() {
       let x = 0;
-      while (x < 12000) {
+      while (x < 20000) {
         const cloud = document.createElement('div');
         cloud.classList.add('cloud');
 
-        // Random cloud size
-        const w = 150 + Math.random() * 150; // 150–300px wide
-        const h = 60 + Math.random() * 60;   // 60–120px high
+        const w = 150 + Math.random() * 150;
+        const h = 60 + Math.random() * 60;
         cloud.style.width = w + 'px';
         cloud.style.height = h + 'px';
 
-        // Random vertical position
         cloud.style.top = (50 + Math.random() * 150) + 'px';
-
-        // Place at current x
         cloud.style.left = x + 'px';
         cloudsContainer.appendChild(cloud);
 
-        // Next cloud after random distance
-        x += 200 + Math.random() * 400; // 200–600px gap
+        x += 200 + Math.random() * 400;
       }
     }
 
@@ -240,7 +235,7 @@
             if (movementDirection === 'ArrowLeft') {
               kittyWorldX = Math.max(0, kittyWorldX - step);
             } else if (movementDirection === 'ArrowRight') {
-              kittyWorldX = Math.min(12000, kittyWorldX + step);
+              kittyWorldX = Math.min(20000, kittyWorldX + step);
             }
             updateWorldPosition();
           }, 30);
