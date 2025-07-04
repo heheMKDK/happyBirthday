@@ -29,8 +29,17 @@
       width: 100vw;
       height: 100vh;
       background: url('clouds.png') repeat-x;
-      background-size: contain;
+      background-size: 250px 275px;
+      animation: moveBackground 30s linear infinite;
       overflow: hidden;
+    }
+    @keyframes moveBackground {
+      0% {
+        background-position: 0 0;
+      }
+      100% {
+        background-position: -1000px 0;
+      }
     }
     #ground {
       position: absolute;
@@ -49,6 +58,7 @@
       left: 100px;
       bottom: 60px;
       z-index: 1;
+      transition: left 0.1s;
     }
     .cake {
       width: 60px;
@@ -56,6 +66,7 @@
       background-image: url('cake.png');
       background-size: cover;
       position: absolute;
+      bottom: 60px;
     }
     #popup {
       position: fixed;
@@ -100,6 +111,9 @@
     let kitty = null;
     let kittyX = 100;
     let cakes = [];
+    let activeCakes = [];
+    let cakeSpawnInterval = null;
+    let cakeMoveInterval = null;
 
     const eatSound = new Audio('eat.mp3');
     const walkSound = new Audio('walk.mp3');
@@ -111,29 +125,60 @@
       document.getElementById('game-screen').style.display = 'block';
 
       kitty = document.getElementById('kitty');
+      cakes = [];
+      activeCakes = [];
+      cakesEaten = 0;
+
       placeCakes();
-      animateKitty();
+      moveCakes();
       setupKeyboard();
     }
 
     function placeCakes() {
       const cakesContainer = document.getElementById('cakes');
+      cakesContainer.innerHTML = '';
       cakes = [];
-      for (let i = 0; i < totalCakes; i++) {
+      activeCakes = [];
+
+      // Spawn a new cake every 0.75 seconds
+      cakeSpawnInterval = setInterval(() => {
+        if (cakesEaten >= totalCakes) {
+          clearInterval(cakeSpawnInterval);
+          return;
+        }
+
         const cake = document.createElement('div');
         cake.classList.add('cake');
-        cake.style.left = Math.random() * (window.innerWidth - 60) + 'px';
-        cake.style.bottom = '60px';
+        cake.style.left = window.innerWidth + 'px';
         cakesContainer.appendChild(cake);
         cakes.push(cake);
-      }
+        activeCakes.push(cake);
+      }, 750);
+    }
+
+    function moveCakes() {
+      cakeMoveInterval = setInterval(() => {
+        activeCakes.forEach((cake, index) => {
+          if (!cake) return;
+          let currentLeft = parseInt(cake.style.left);
+          cake.style.left = (currentLeft - 2) + 'px';
+
+          if (currentLeft < -60) {
+            cake.remove();
+            activeCakes[index] = null;
+          }
+        });
+        checkCollisions();
+      }, 30);
     }
 
     function eatCake(cake) {
       cake.remove();
       eatSound.play();
       cakesEaten++;
-      if (cakesEaten === totalCakes) {
+      if (cakesEaten >= totalCakes) {
+        clearInterval(cakeSpawnInterval);
+        clearInterval(cakeMoveInterval);
         setTimeout(showPopup, 500);
       }
     }
@@ -145,26 +190,28 @@
       showConfetti();
     }
 
-    function animateKitty() {
-      let frame = 0;
-      setInterval(() => {
-        frame = (frame + 1) % 2;
-        kitty.style.backgroundImage = `url('hello_kitty${frame + 1}.png')`;
-      }, 300);
-    }
-
     function setupKeyboard() {
       document.addEventListener('keydown', (e) => {
         const step = 10;
+        let moved = false;
+
         if (e.key === 'ArrowLeft') {
           kittyX = Math.max(0, kittyX - step);
-          walkSound.play();
+          moved = true;
         } else if (e.key === 'ArrowRight') {
           kittyX = Math.min(window.innerWidth - 100, kittyX + step);
-          walkSound.play();
+          moved = true;
         }
-        kitty.style.left = kittyX + 'px';
-        checkCollisions();
+
+        if (moved) {
+          kitty.style.left = kittyX + 'px';
+          walkSound.play();
+          kitty.style.backgroundImage = `url('hello_kitty2.png')`;
+
+          setTimeout(() => {
+            kitty.style.backgroundImage = `url('hello_kitty1.png')`;
+          }, 200);
+        }
       });
     }
 
@@ -181,6 +228,7 @@
         ) {
           eatCake(cake);
           cakes[index] = null;
+          activeCakes[index] = null;
         }
       });
     }
