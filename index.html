@@ -28,16 +28,16 @@
       position: relative;
       width: 100vw;
       height: 100vh;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: visible;
       background-color: #ffe6f0;
     }
     #world {
       position: absolute;
       height: 100%;
-      width: 5000px;  /* The big world width */
+      width: 5000px;
       left: 0;
       top: 0;
-      overflow: visible;
     }
     .cloud {
       position: absolute;
@@ -46,7 +46,6 @@
       background-image: url('clouds.png');
       background-size: cover;
       opacity: 0.8;
-      top: 50px;
     }
     #ground {
       position: absolute;
@@ -62,11 +61,10 @@
       background-image: url('hello_kitty1.png');
       background-size: cover;
       position: absolute;
-      left: 50vw; /* center of screen */
+      left: 50vw;
       bottom: 60px;
-      z-index: 2;
       transform: translateX(-50%);
-      transition: background-image 0.1s;
+      z-index: 2;
     }
     .cake {
       width: 60px;
@@ -120,17 +118,21 @@
     let name = '';
     let cakesEaten = 0;
     const totalCakes = 15;
-    let kittyWorldX = 2500; // start in the middle of the world
+    let kittyWorldX = 2500;
+    let popupShown = false;
+    let walking = false;
+
     let world = null;
     let cloudsContainer = null;
     let cakesContainer = null;
     let cakes = [];
-    let activeCakes = [];
     let cakeSpawnInterval = null;
     let cakeMoveInterval = null;
 
     const eatSound = new Audio('eat.mp3');
     const walkSound = new Audio('walk.mp3');
+    walkSound.loop = true;
+
     const popupSound = new Audio('popup.mp3');
 
     function startGame() {
@@ -138,52 +140,48 @@
       document.getElementById('start-screen').style.display = 'none';
       document.getElementById('game-screen').style.display = 'block';
 
+      kittyWorldX = 2500;
+      popupShown = false;
+      cakesEaten = 0;
+      walking = false;
+
       world = document.getElementById('world');
       cloudsContainer = document.getElementById('clouds');
       cakesContainer = document.getElementById('cakes');
 
+      cloudsContainer.innerHTML = '';
+      cakesContainer.innerHTML = '';
       cakes = [];
-      activeCakes = [];
-      cakesEaten = 0;
-      kittyWorldX = 2500;
 
       setupClouds();
       placeCakes();
       moveCakes();
-      setupKeyboard();
       updateWorldPosition();
+      setupKeyboard();
     }
 
     function setupClouds() {
-      cloudsContainer.innerHTML = '';
       for (let i = 0; i < 20; i++) {
         const cloud = document.createElement('div');
         cloud.classList.add('cloud');
         cloud.style.left = Math.random() * 4800 + 'px';
-        cloud.style.top = (30 + Math.random() * 100) + 'px';
+        cloud.style.top = (80 + Math.random() * 100) + 'px';
         cloudsContainer.appendChild(cloud);
       }
     }
 
     function placeCakes() {
-      cakesContainer.innerHTML = '';
-      cakes = [];
-      activeCakes = [];
-
       cakeSpawnInterval = setInterval(() => {
         if (cakesEaten >= totalCakes) {
           clearInterval(cakeSpawnInterval);
           return;
         }
-
         const cake = document.createElement('div');
         cake.classList.add('cake');
-        // spawn near Kitty
         let spawnX = kittyWorldX + 400 + Math.random() * 300;
         cake.style.left = spawnX + 'px';
         cakesContainer.appendChild(cake);
         cakes.push(cake);
-        activeCakes.push(cake);
       }, 1750);
     }
 
@@ -199,6 +197,7 @@
 
     function setupKeyboard() {
       document.addEventListener('keydown', (e) => {
+        if (e.repeat) return;
         const step = 20;
         let moved = false;
 
@@ -211,13 +210,22 @@
         }
 
         if (moved) {
-          walkSound.play();
+          if (!walking) {
+            walking = true;
+            walkSound.currentTime = 0;
+            walkSound.play();
+          }
           document.getElementById('kitty').style.backgroundImage = `url('hello_kitty2.png')`;
           updateWorldPosition();
+        }
+      });
 
-          setTimeout(() => {
-            document.getElementById('kitty').style.backgroundImage = `url('hello_kitty1.png')`;
-          }, 200);
+      document.addEventListener('keyup', (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          walking = false;
+          walkSound.pause();
+          walkSound.currentTime = 0;
+          document.getElementById('kitty').style.backgroundImage = `url('hello_kitty1.png')`;
         }
       });
     }
@@ -235,16 +243,17 @@
         ) {
           eatCake(cake);
           cakes[index] = null;
-          activeCakes[index] = null;
         }
       });
     }
 
     function eatCake(cake) {
       cake.remove();
+      eatSound.currentTime = 0;
       eatSound.play();
       cakesEaten++;
-      if (cakesEaten >= totalCakes) {
+      if (cakesEaten >= totalCakes && !popupShown) {
+        popupShown = true;
         clearInterval(cakeSpawnInterval);
         clearInterval(cakeMoveInterval);
         setTimeout(showPopup, 500);
@@ -252,7 +261,10 @@
     }
 
     function showPopup() {
-      popupSound.play();
+      popupSound.currentTime = 0;
+      popupSound.play().catch(e => {
+        console.log("Popup sound blocked:", e);
+      });
       document.getElementById('popup-message').innerText = `🎉 Happy Birthday ${name}! 🎂`;
       document.getElementById('popup').classList.remove('hidden');
       showConfetti();
