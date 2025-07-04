@@ -28,23 +28,30 @@
       position: relative;
       width: 100vw;
       height: 100vh;
-      background: url('clouds.png') repeat-x;
-      background-size: 250px 275px;
-      animation: moveBackground 30s linear infinite;
       overflow: hidden;
+      background-color: #ffe6f0;
     }
-    @keyframes moveBackground {
-      0% {
-        background-position: 0 0;
-      }
-      100% {
-        background-position: -1000px 0;
-      }
+    #world {
+      position: absolute;
+      height: 100%;
+      width: 5000px;  /* The big world width */
+      left: 0;
+      top: 0;
+      overflow: visible;
+    }
+    .cloud {
+      position: absolute;
+      width: 250px;
+      height: 275px;
+      background-image: url('clouds.png');
+      background-size: cover;
+      opacity: 0.8;
+      top: 50px;
     }
     #ground {
       position: absolute;
       bottom: 0;
-      width: 100%;
+      width: 5000px;
       height: 60px;
       background: #ffb6c1;
       z-index: 0;
@@ -55,10 +62,11 @@
       background-image: url('hello_kitty1.png');
       background-size: cover;
       position: absolute;
-      left: 100px;
+      left: 50vw; /* center of screen */
       bottom: 60px;
-      z-index: 1;
-      transition: left 0.1s;
+      z-index: 2;
+      transform: translateX(-50%);
+      transition: background-image 0.1s;
     }
     .cake {
       width: 60px;
@@ -67,6 +75,7 @@
       background-size: cover;
       position: absolute;
       bottom: 60px;
+      z-index: 1;
     }
     #popup {
       position: fixed;
@@ -95,9 +104,12 @@
   </div>
 
   <div id="game-screen" style="display: none;">
-    <div id="ground"></div>
+    <div id="world">
+      <div id="ground"></div>
+      <div id="clouds"></div>
+      <div id="cakes"></div>
+    </div>
     <div id="kitty"></div>
-    <div id="cakes"></div>
   </div>
 
   <div id="popup" class="hidden">
@@ -108,8 +120,10 @@
     let name = '';
     let cakesEaten = 0;
     const totalCakes = 15;
-    let kitty = null;
-    let kittyX = 100;
+    let kittyWorldX = 2500; // start in the middle of the world
+    let world = null;
+    let cloudsContainer = null;
+    let cakesContainer = null;
     let cakes = [];
     let activeCakes = [];
     let cakeSpawnInterval = null;
@@ -124,23 +138,38 @@
       document.getElementById('start-screen').style.display = 'none';
       document.getElementById('game-screen').style.display = 'block';
 
-      kitty = document.getElementById('kitty');
+      world = document.getElementById('world');
+      cloudsContainer = document.getElementById('clouds');
+      cakesContainer = document.getElementById('cakes');
+
       cakes = [];
       activeCakes = [];
       cakesEaten = 0;
+      kittyWorldX = 2500;
 
+      setupClouds();
       placeCakes();
       moveCakes();
       setupKeyboard();
+      updateWorldPosition();
+    }
+
+    function setupClouds() {
+      cloudsContainer.innerHTML = '';
+      for (let i = 0; i < 20; i++) {
+        const cloud = document.createElement('div');
+        cloud.classList.add('cloud');
+        cloud.style.left = Math.random() * 4800 + 'px';
+        cloud.style.top = (30 + Math.random() * 100) + 'px';
+        cloudsContainer.appendChild(cloud);
+      }
     }
 
     function placeCakes() {
-      const cakesContainer = document.getElementById('cakes');
       cakesContainer.innerHTML = '';
       cakes = [];
       activeCakes = [];
 
-      // Spawn a new cake every 0.75 seconds
       cakeSpawnInterval = setInterval(() => {
         if (cakesEaten >= totalCakes) {
           clearInterval(cakeSpawnInterval);
@@ -149,27 +178,66 @@
 
         const cake = document.createElement('div');
         cake.classList.add('cake');
-        cake.style.left = window.innerWidth + 'px';
+        // spawn near Kitty
+        let spawnX = kittyWorldX + 400 + Math.random() * 300;
+        cake.style.left = spawnX + 'px';
         cakesContainer.appendChild(cake);
         cakes.push(cake);
         activeCakes.push(cake);
-      }, 750);
+      }, 1750);
     }
 
     function moveCakes() {
       cakeMoveInterval = setInterval(() => {
-        activeCakes.forEach((cake, index) => {
-          if (!cake) return;
-          let currentLeft = parseInt(cake.style.left);
-          cake.style.left = (currentLeft - 2) + 'px';
-
-          if (currentLeft < -60) {
-            cake.remove();
-            activeCakes[index] = null;
-          }
-        });
         checkCollisions();
       }, 30);
+    }
+
+    function updateWorldPosition() {
+      world.style.left = (-(kittyWorldX - window.innerWidth / 2)) + 'px';
+    }
+
+    function setupKeyboard() {
+      document.addEventListener('keydown', (e) => {
+        const step = 20;
+        let moved = false;
+
+        if (e.key === 'ArrowLeft') {
+          kittyWorldX = Math.max(0, kittyWorldX - step);
+          moved = true;
+        } else if (e.key === 'ArrowRight') {
+          kittyWorldX = Math.min(5000, kittyWorldX + step);
+          moved = true;
+        }
+
+        if (moved) {
+          walkSound.play();
+          document.getElementById('kitty').style.backgroundImage = `url('hello_kitty2.png')`;
+          updateWorldPosition();
+
+          setTimeout(() => {
+            document.getElementById('kitty').style.backgroundImage = `url('hello_kitty1.png')`;
+          }, 200);
+        }
+      });
+    }
+
+    function checkCollisions() {
+      const kittyRect = document.getElementById('kitty').getBoundingClientRect();
+      cakes.forEach((cake, index) => {
+        if (!cake) return;
+        const cakeRect = cake.getBoundingClientRect();
+        if (
+          kittyRect.left < cakeRect.right &&
+          kittyRect.right > cakeRect.left &&
+          kittyRect.bottom > cakeRect.top &&
+          kittyRect.top < cakeRect.bottom
+        ) {
+          eatCake(cake);
+          cakes[index] = null;
+          activeCakes[index] = null;
+        }
+      });
     }
 
     function eatCake(cake) {
@@ -188,49 +256,6 @@
       document.getElementById('popup-message').innerText = `🎉 Happy Birthday ${name}! 🎂`;
       document.getElementById('popup').classList.remove('hidden');
       showConfetti();
-    }
-
-    function setupKeyboard() {
-      document.addEventListener('keydown', (e) => {
-        const step = 10;
-        let moved = false;
-
-        if (e.key === 'ArrowLeft') {
-          kittyX = Math.max(0, kittyX - step);
-          moved = true;
-        } else if (e.key === 'ArrowRight') {
-          kittyX = Math.min(window.innerWidth - 100, kittyX + step);
-          moved = true;
-        }
-
-        if (moved) {
-          kitty.style.left = kittyX + 'px';
-          walkSound.play();
-          kitty.style.backgroundImage = `url('hello_kitty2.png')`;
-
-          setTimeout(() => {
-            kitty.style.backgroundImage = `url('hello_kitty1.png')`;
-          }, 200);
-        }
-      });
-    }
-
-    function checkCollisions() {
-      const kittyRect = kitty.getBoundingClientRect();
-      cakes.forEach((cake, index) => {
-        if (!cake) return;
-        const cakeRect = cake.getBoundingClientRect();
-        if (
-          kittyRect.left < cakeRect.right &&
-          kittyRect.right > cakeRect.left &&
-          kittyRect.bottom > cakeRect.top &&
-          kittyRect.top < cakeRect.bottom
-        ) {
-          eatCake(cake);
-          cakes[index] = null;
-          activeCakes[index] = null;
-        }
-      });
     }
 
     function showConfetti() {
