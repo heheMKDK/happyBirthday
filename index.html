@@ -29,20 +29,17 @@
       width: 100vw;
       height: 100vh;
       overflow-x: hidden;
-      overflow-y: visible;
       background-color: #ffe6f0;
     }
     #world {
       position: absolute;
       height: 100%;
-      width: 8000px;
+      width: 12000px;
       left: 0;
       top: 0;
     }
     .cloud {
       position: absolute;
-      width: 250px;
-      height: 100px;
       background-image: url('clouds.png');
       background-size: contain;
       background-repeat: no-repeat;
@@ -51,7 +48,7 @@
     #ground {
       position: absolute;
       bottom: 0;
-      width: 8000px;
+      width: 12000px;
       height: 60px;
       background: #ffb6c1;
       z-index: 0;
@@ -119,13 +116,11 @@
     let name = '';
     let cakesEaten = 0;
     const totalCakes = 15;
-    let kittyWorldX = 4000;
+    let kittyWorldX = 6000;
     let popupShown = false;
     let walking = false;
 
-    let world = null;
-    let cloudsContainer = null;
-    let cakesContainer = null;
+    let world, cloudsContainer, cakesContainer;
     let cakes = [];
     let cakeSpawnInterval = null;
     let cakeMoveInterval = null;
@@ -145,7 +140,7 @@
       document.getElementById('start-screen').style.display = 'none';
       document.getElementById('game-screen').style.display = 'block';
 
-      kittyWorldX = 4000;
+      kittyWorldX = 6000;
       popupShown = false;
       cakesEaten = 0;
       walking = false;
@@ -172,12 +167,26 @@
     }
 
     function setupClouds() {
-      for (let i = 0; i < 20; i++) {
+      let x = 0;
+      while (x < 12000) {
         const cloud = document.createElement('div');
         cloud.classList.add('cloud');
-        cloud.style.left = Math.random() * 7800 + 'px';
+
+        // Random cloud size
+        const w = 150 + Math.random() * 150; // 150–300px wide
+        const h = 60 + Math.random() * 60;   // 60–120px high
+        cloud.style.width = w + 'px';
+        cloud.style.height = h + 'px';
+
+        // Random vertical position
         cloud.style.top = (50 + Math.random() * 150) + 'px';
+
+        // Place at current x
+        cloud.style.left = x + 'px';
         cloudsContainer.appendChild(cloud);
+
+        // Next cloud after random distance
+        x += 200 + Math.random() * 400; // 200–600px gap
       }
     }
 
@@ -221,10 +230,9 @@
           }
 
           animationFrame = 0;
-          document.getElementById('kitty').style.backgroundImage = `url('hello_kitty1.png')`;
           animationInterval = setInterval(() => {
             animationFrame = (animationFrame + 1) % 2;
-            document.getElementById('kitty').style.backgroundImage = `url('hello_kitty' + (animationFrame + 1) + '.png')`;
+            document.getElementById('kitty').style.backgroundImage = `url('hello_kitty${animationFrame + 1}.png')`;
           }, 300);
 
           movementInterval = setInterval(() => {
@@ -232,7 +240,7 @@
             if (movementDirection === 'ArrowLeft') {
               kittyWorldX = Math.max(0, kittyWorldX - step);
             } else if (movementDirection === 'ArrowRight') {
-              kittyWorldX = Math.min(8000, kittyWorldX + step);
+              kittyWorldX = Math.min(12000, kittyWorldX + step);
             }
             updateWorldPosition();
           }, 30);
@@ -288,9 +296,7 @@
 
     function showPopup() {
       popupSound.currentTime = 0;
-      popupSound.play().catch(e => {
-        console.log("Popup sound blocked:", e);
-      });
+      popupSound.play().catch(e => console.log("Popup sound blocked"));
       document.getElementById('popup-message').innerText = `🎉 Happy Birthday ${name}! 🎂`;
       document.getElementById('popup').classList.remove('hidden');
       showConfetti();
