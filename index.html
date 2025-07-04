@@ -34,7 +34,7 @@
     #world {
       position: absolute;
       height: 100%;
-      width: 25000px;
+      width: 35000px;
       left: 0;
       top: 0;
     }
@@ -48,7 +48,7 @@
     #ground {
       position: absolute;
       bottom: 0;
-      width: 25000px;
+      width: 35000px;
       height: 60px;
       background: #ffb6c1;
       z-index: 0;
@@ -116,7 +116,7 @@
     let name = '';
     let cakesEaten = 0;
     const totalCakes = 20;
-    let kittyWorldX = 12500;
+    let kittyWorldX = 17500;
     let popupShown = false;
     let walking = false;
 
@@ -140,7 +140,7 @@
       document.getElementById('start-screen').style.display = 'none';
       document.getElementById('game-screen').style.display = 'block';
 
-      kittyWorldX = 12500;
+      kittyWorldX = 17500;
       popupShown = false;
       cakesEaten = 0;
       walking = false;
@@ -168,7 +168,7 @@
 
     function setupClouds() {
       let x = 0;
-      while (x < 25000) {
+      while (x < 35000) {
         const cloud = document.createElement('div');
         cloud.classList.add('cloud');
 
@@ -198,7 +198,7 @@
         cakesContainer.appendChild(cake);
         cakes.push(cake);
         spawnedCakesCount++;
-      }, 1750);
+      }, 1500);
     }
 
     function moveCakes() {
@@ -235,7 +235,7 @@
             if (movementDirection === 'ArrowLeft') {
               kittyWorldX = Math.max(0, kittyWorldX - step);
             } else if (movementDirection === 'ArrowRight') {
-              kittyWorldX = Math.min(25000, kittyWorldX + step);
+              kittyWorldX = Math.min(35000, kittyWorldX + step);
             }
             updateWorldPosition();
           }, 30);
