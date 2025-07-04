@@ -35,7 +35,7 @@
     #world {
       position: absolute;
       height: 100%;
-      width: 5000px;
+      width: 8000px;
       left: 0;
       top: 0;
     }
@@ -51,7 +51,7 @@
     #ground {
       position: absolute;
       bottom: 0;
-      width: 5000px;
+      width: 8000px;
       height: 60px;
       background: #ffb6c1;
       z-index: 0;
@@ -119,7 +119,7 @@
     let name = '';
     let cakesEaten = 0;
     const totalCakes = 15;
-    let kittyWorldX = 2500;
+    let kittyWorldX = 4000;
     let popupShown = false;
     let walking = false;
 
@@ -132,11 +132,12 @@
     let spawnedCakesCount = 0;
     let movementInterval = null;
     let movementDirection = null;
+    let animationInterval = null;
+    let animationFrame = 0;
 
     const eatSound = new Audio('eat.mp3');
     const walkSound = new Audio('walk.mp3');
     walkSound.loop = true;
-
     const popupSound = new Audio('popup.mp3');
 
     function startGame() {
@@ -144,13 +145,14 @@
       document.getElementById('start-screen').style.display = 'none';
       document.getElementById('game-screen').style.display = 'block';
 
-      kittyWorldX = 2500;
+      kittyWorldX = 4000;
       popupShown = false;
       cakesEaten = 0;
       walking = false;
       spawnedCakesCount = 0;
       movementDirection = null;
       clearInterval(movementInterval);
+      clearInterval(animationInterval);
 
       world = document.getElementById('world');
       cloudsContainer = document.getElementById('clouds');
@@ -159,6 +161,8 @@
       cloudsContainer.innerHTML = '';
       cakesContainer.innerHTML = '';
       cakes = [];
+
+      document.getElementById('kitty').style.backgroundImage = `url('hello_kitty1.png')`;
 
       setupClouds();
       placeCakes();
@@ -171,7 +175,7 @@
       for (let i = 0; i < 20; i++) {
         const cloud = document.createElement('div');
         cloud.classList.add('cloud');
-        cloud.style.left = Math.random() * 4800 + 'px';
+        cloud.style.left = Math.random() * 7800 + 'px';
         cloud.style.top = (50 + Math.random() * 150) + 'px';
         cloudsContainer.appendChild(cloud);
       }
@@ -190,7 +194,7 @@
         cakesContainer.appendChild(cake);
         cakes.push(cake);
         spawnedCakesCount++;
-      }, 1750);
+      }, 2000);
     }
 
     function moveCakes() {
@@ -209,19 +213,26 @@
 
         if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
           movementDirection = e.key;
+
           if (!walking) {
             walking = true;
             walkSound.currentTime = 0;
             walkSound.play();
           }
-          document.getElementById('kitty').style.backgroundImage = `url('hello_kitty2.png')`;
+
+          animationFrame = 0;
+          document.getElementById('kitty').style.backgroundImage = `url('hello_kitty1.png')`;
+          animationInterval = setInterval(() => {
+            animationFrame = (animationFrame + 1) % 2;
+            document.getElementById('kitty').style.backgroundImage = `url('hello_kitty' + (animationFrame + 1) + '.png')`;
+          }, 300);
 
           movementInterval = setInterval(() => {
             const step = 10;
             if (movementDirection === 'ArrowLeft') {
               kittyWorldX = Math.max(0, kittyWorldX - step);
             } else if (movementDirection === 'ArrowRight') {
-              kittyWorldX = Math.min(5000, kittyWorldX + step);
+              kittyWorldX = Math.min(8000, kittyWorldX + step);
             }
             updateWorldPosition();
           }, 30);
@@ -234,10 +245,13 @@
           movementInterval = null;
           movementDirection = null;
 
+          clearInterval(animationInterval);
+          animationInterval = null;
+          document.getElementById('kitty').style.backgroundImage = `url('hello_kitty1.png')`;
+
           walking = false;
           walkSound.pause();
           walkSound.currentTime = 0;
-          document.getElementById('kitty').style.backgroundImage = `url('hello_kitty1.png')`;
         }
       });
     }
@@ -307,3 +321,4 @@
   </script>
 </body>
 </html>
+
